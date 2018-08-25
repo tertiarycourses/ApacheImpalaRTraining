@@ -1,0 +1,158 @@
+
+##################### 06_Joining Tables
+
+airp=read.csv(file.choose())  #choose airports.csv
+names(airp)
+
+dbCreateTable(conn=impalaconn,
+                     name="airports",
+                     fields=airp,
+                     temporary=F)
+
+dbWriteTable(conn=impalaconn,
+             name="airports",
+             value=airp,
+             temporary=F,
+             overwrite=T)
+
+
+airways %>% left_join(airports,
+                      by=c("Origin"="iata")) %>% 
+                      head(1000) %>% 
+                      compute(name="table1", temporary=FALSE)
+
+
+################ 07_analysis
+
+# Total Number of Flights Diverted Each Month
+
+airlines2 %>% select(month, diverted) %>%
+              filter(diverted == 1) %>%
+              group_by(month) %>%
+              summarize(count=n()) %>%
+  as.data.frame() %>%
+  mutate(month=as.factor(month),
+         count=as.integer(count)) %>%
+  arrange(month)  
+
+
+
+# Which month have seen the most number of cancellation due to bad weather?
+
+airlines2 %>% select(cancelled, month, cancellationcode) %>%
+  filter(cancelled==1 , cancellationcode=="B") %>%
+  group_by(month) %>%
+  summarize(cnt=n()) %>%
+  as.data.frame() %>%
+  mutate(month=as.integer(month),
+         cnt=as.integer(cnt)) %>%
+  arrange(desc(cnt)) %>% slice(1)
+
+
+# Top 5 most visited destination.
+
+ airlines2 %>% select(dest) %>%
+   group_by(dest) %>%
+   summarize(cnt=n()) %>%
+   as.data.frame() %>%
+   mutate(dest=as.factor(dest),
+          cnt=as.integer(cnt)) %>%
+   arrange(desc(cnt)) %>% slice(1:5)
+
+
+################ 08_aggregations
+
+# find the cumulative max of distance grouped by dayofweek and month
+# arranged in order of month
+
+impalaconn %>% tbl("airways") %>%
+  select(dayofweek, month, distance) %>%
+  filter(!is.na(dayofweek)) %>%
+  filter(!is.na(month)) %>%
+  arrange(month) %>%
+  group_by(month, dayofweek) %>%
+  mutate(running = cummax(distance))
+
+
+
+# find the summary table for mean and max of weatherdelay and distance
+
+impalaconn %>% tbl("airways") %>%
+  select(dayofweek, distance, weatherdelay) %>%
+  filter(!is.na(dayofweek)) %>%
+  filter(!is.na(weatherdelay)) %>%
+  arrange(dayofweek) %>%
+  group_by(dayofweek) %>% 
+  summarise_at(
+    vars(weatherdelay, distance), funs(mean, max))
+# multiple columns and multiple functions
+
+
+################## 09_visualizations
+
+
+#plot how many flights with valid cancellation code by months and 
+#fill color with cancellation code
+
+airlines2 %>% 
+  select(month,dayofmonth,cancellationcode) %>%
+  group_by(dayofmonth, month, cancellationcode)%>%
+  filter(cancellationcode %in% c("A","B","C","D")) %>% 
+  summarize(count=n()) %>% 
+  as.data.frame() %>%
+  mutate(cancellationcode=as.factor(cancellationcode),
+         dayofmonth=as.integer(dayofmonth),
+         count=as.integer(count),
+         month=as.integer(month)) %>%
+  ggplot()+aes(x=factor(month),y=count, fill=factor(cancellationcode))+
+  geom_bar(stat="identity")
+
+
+################## 12_statistics
+
+## is there a relationship between distance and lateaircraftdelay
+# do longer distance flights always arrive late?
+
+airlines2 %>%
+  select(distance, lateaircraftdelay) %>%
+  filter(!is.na(distance)) %>%
+  filter(!is.na(lateaircraftdelay)) %>%
+  do(tidy(cor(.$distance, .$lateaircraftdelay)))
+
+
+# is the weather delay the same for months of april and may?
+# is there a difference
+
+airlines2 %>%
+  select(weatherdelay, month) %>%
+  filter(!is.na(weatherdelay)) %>%
+  filter(!is.na(month)) %>%
+  filter(month %in% c(4,5))
+  mutate(weatherdelay=as.numeric(weatherdelay),
+         month=as.character(month)) %>%
+  do(tidy(t.test(weather ~ month, data=.))) %>%
+  View()
+gc()
+
+
+# is the relationship between distance and lateaircraft delay
+# the same for every month? 
+
+airlines2 %>%
+  select(distance, lateaircraftdelay, month) %>%
+  filter(!is.na(distance)) %>%
+  filter(!is.na(lateaircraftdelay)) %>%
+  collect() %>%
+  nest(-month) %>%
+  mutate(test=map(data, ~ cor(.x$distance, .x$lateaircraftdelay)),
+         tidied=map(test, tidy)
+         )%>%
+unnest(tidied, .drop=TRUE) %>%
+  arrange(month) %>%
+  View()
+
+
+
+
+
+

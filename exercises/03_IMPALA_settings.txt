@@ -1,0 +1,69 @@
+###########################################################
+#                    presetup
+###########################################################
+
+$ sudo yum install -y java-1.8.0-openjdk-devel       # JRE
+
+$ java -version
+$ javac -version
+
+$ sudo rpm -ivh http://mirror.chpc.utah.edu/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm
+$ sudo yum install -y libcurl-devel openssl-devel libxml2-devel libssl-devel
+
+
+# to see variable value
+echo "$JAVA_HOME"
+
+# to see path
+which java
+
+# to see version
+java -version
+
+#################################################################
+#                             configurations
+#################################################################
+
+### setup first
+
+Write the following lines in file  ~/.bashrc and /etc/profile
+
+export HADOOP_HOME=/usr/lib/hadoop/
+export HADOOP_CMD=/usr/lib/hadoop/bin/hadoop
+export HADOOP_STREAMING=/usr/lib/hadoop-mapreduce/hadoop-streaming.jar
+export HADOOP_LIB=/usr/lib/hadoop/lib
+export HIVE_HOME=/usr/lib/hive/
+export HADOOP_CONF=/usr/lib/hadoop/etc/hadoop/
+export HADOOP_CONF_DIR=/etc/hadoop/conf/
+export YARN_CONF=/usr/lib/hadoop/etc/hadoop/
+export SPARK_HOME=/usr/lib/spark/
+export SPARK_CONF_DIR=/usr/lib/spark/conf/
+export PATH=$SPARK_HOME/ec2:$PATH
+export JAVA_HOME=/usr/lib/jvm/jre-1.8.0-openjdk.x86_64/  # don't use>(/usr/java/jdk1.7.0_67-cloudera)
+export LD_LIBRARY_PATH=/usr/lib64/R/library/rJava/libs/rJava.so
+export R_JAVA_LD_LIBRARY_PATH=${JAVA/_HOME}/jre/lib/amd64/server
+export HADOOP_COMMON_LIB_NATIVE_DIR=/usr/lib/hadoop/lib/native/
+export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/usr/local/lib/pkgconfig
+
+
+#################### HIVE #################################
+
+
+$ sudo cp /usr/lib/hive/conf/hive-site.xml /usr/lib/spark/conf
+
+change the HIVE permissions >>>
+
+sudo -u hdfs hadoop fs -chmod -R 777  /user/hive/warehouse
+sudo chmod 777 /tmp/hive
+
+
+################# CLOUDERA MANAGER ##########################
+
+In cloudera manager, click hdfs > configuration > advanced and put the following code in HDFS Service Advanced Configuration Snippet (Safety Valve) for hdfs-site.xml
+
+<property>
+<name>dfs.permissions</name>
+<value>false</value>
+</property>
+
+>> save changes

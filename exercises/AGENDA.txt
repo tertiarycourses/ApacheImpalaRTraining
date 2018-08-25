@@ -1,0 +1,44 @@
+Apache Impala is an open source massively parallel processing SQL query engine for Apache Hadoop.
+The result is order-of-magnitude faster performance than Hive, depending on the type of query and configuration. Apache Impala provides a familiar and unified platform for batch-oriented or real-time queries. This course shows how to use R tidyverse package and Impala to query, visualize and perform statistical analysis & machine learning on your data.
+
+
+Module 1: Get Started on Apache Impala
+Why Impala?
+Differences between Impala and Hive
+Impala Concepts and Setup
+Hadoop Cluster Components
+Setup Cloudera Hadoop VM
+Adding Settings and Connections 
+
+
+Module 2: Importing Data into Impala
+Creating Tables in Impala
+Importing CSV files in Imapala
+
+
+Module 3: Getting Data from Impala
+Impala Queries with dplyr
+Analyzing data with Impala
+Extracting data and storing as table
+Joining multiple tables together
+
+
+Module 4: Aggregating Data with Impala 
+Simple Aggregations
+Grouping Sets
+Data analysis
+
+
+Module5: Visualizing data
+Using ggplot2 for data analysis
+Using tabplot to visulize queries
+Using dbplot to visualize database
+
+
+Module 6: Advanced Data Analysis
+correlations
+t-test 
+anova
+linear regression
+random forest
+kMeans
